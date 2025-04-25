@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hamiltonian Model for Electron Trapping</title>
+  <title>Quasistatic Wakefields 1D</title>
   <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
   <style>
     body {
@@ -26,9 +26,10 @@
     }
     .output {
       margin-top: 40px;
+      text-align: center;
     }
-    canvas {
-      width: 100%;
+    img {
+      max-width: 100%;
       height: auto;
     }
   </style>
@@ -54,7 +55,7 @@
 
     <!-- Output -->
     <div class="output">
-      <canvas id="plot"></canvas>
+      <img id="plot" alt="Plot will be displayed here">
     </div>
   </div>
 
@@ -120,14 +121,8 @@ img_base64
         const output = await pyodide.runPythonAsync(plotCode);
 
         // Display the plot
-        const img = new Image();
-        img.src = "data:image/png;base64," + output;
-        const canvas = document.getElementById("plot");
-        const ctx = canvas.getContext("2d");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
+        const imgElement = document.getElementById("plot");
+        imgElement.src = "data:image/png;base64," + output;
       }
 
       // Add event listeners to sliders
