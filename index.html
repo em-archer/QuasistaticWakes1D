@@ -65,6 +65,10 @@
         const pyodide = await loadPyodide();
         console.log("Pyodide loaded successfully!");
 
+        // Load required Python packages
+        await pyodide.loadPackage(["numpy", "matplotlib"]);
+        console.log("Required Python packages loaded successfully!");
+
         // Define Python code as a string
         const pythonCode = `
 import numpy as np
