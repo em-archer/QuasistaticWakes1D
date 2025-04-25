@@ -36,7 +36,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Hamiltonian Model for Electron Trapping</h1>
+    <h1>Quasistatic Wakefields 1D</h1>
     <p>Created by Emily Archer, 2025</p>
     
     <!-- Sliders -->
@@ -61,10 +61,12 @@
 
   <script type="text/javascript">
     async function main() {
-      const pyodide = await loadPyodide();
+      try {
+        const pyodide = await loadPyodide();
+        console.log("Pyodide loaded successfully!");
 
-      // Python code as a string
-      const pythonCode = `
+        // Define Python code as a string
+        const pythonCode = `
 import numpy as np
 import matplotlib.pyplot as plt
 from io import BytesIO
@@ -97,41 +99,46 @@ def plot_wakefield(omega0, a01, tau1):
     buf.seek(0)
     img_str = base64.b64encode(buf.read()).decode("utf-8")
     return img_str
-      `;
+        `;
 
-      // Run the Python code to define functions
-      await pyodide.runPythonAsync(pythonCode);
+        // Load Python code into Pyodide
+        await pyodide.runPythonAsync(pythonCode);
+        console.log("Python code loaded successfully!");
 
-      // Update the plot based on slider values
-      async function updatePlot() {
-        const omega0 = document.getElementById("omega0").value;
-        const a01 = document.getElementById("a01").value;
-        const tau1 = document.getElementById("tau1").value;
+        // Function to update the plot based on slider values
+        async function updatePlot() {
+          const omega0 = document.getElementById("omega0").value;
+          const a01 = document.getElementById("a01").value;
+          const tau1 = document.getElementById("tau1").value;
 
-        // Update slider labels
-        document.getElementById("omega0-value").innerText = omega0;
-        document.getElementById("a01-value").innerText = a01;
-        document.getElementById("tau1-value").innerText = tau1;
+          // Update slider values displayed in labels
+          document.getElementById("omega0-value").innerText = omega0;
+          document.getElementById("a01-value").innerText = a01;
+          document.getElementById("tau1-value").innerText = tau1;
 
-        // Generate the plot
-        const plotCode = `
+          // Generate the plot using Python code
+          const plotCode = `
 img_base64 = plot_wakefield(${omega0}, ${a01}, ${tau1})
 img_base64
-        `;
-        const output = await pyodide.runPythonAsync(plotCode);
+          `;
+          const output = await pyodide.runPythonAsync(plotCode);
 
-        // Display the plot
-        const imgElement = document.getElementById("plot");
-        imgElement.src = "data:image/png;base64," + output;
+          // Display the plot as an image
+          const imgElement = document.getElementById("plot");
+          imgElement.src = "data:image/png;base64," + output;
+          console.log("Plot updated!");
+        }
+
+        // Add event listeners to sliders
+        document.getElementById("omega0").addEventListener("input", updatePlot);
+        document.getElementById("a01").addEventListener("input", updatePlot);
+        document.getElementById("tau1").addEventListener("input", updatePlot);
+
+        // Generate the initial plot
+        updatePlot();
+      } catch (error) {
+        console.error("Error during initialization:", error);
       }
-
-      // Add event listeners to sliders
-      document.getElementById("omega0").addEventListener("input", updatePlot);
-      document.getElementById("a01").addEventListener("input", updatePlot);
-      document.getElementById("tau1").addEventListener("input", updatePlot);
-
-      // Initial plot
-      updatePlot();
     }
 
     main();
