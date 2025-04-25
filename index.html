@@ -7476,12 +7476,12 @@ a.anchor-link {
 </style>
 <!-- End of mermaid configuration --></head>
 <body class="jp-Notebook" data-jp-theme-light="true" data-jp-theme-name="JupyterLab Light">
-<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+<main><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="s2">"==================================================================="</span>
@@ -7490,44 +7490,37 @@ a.anchor-link {
 <span class="s2">"====================Created by Emily Archer, 2025=================="</span>
 
 <span class="s2">"IMPORTING RELEVANT MODULES"</span>
-<span class="s2">"General"</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">basename</span>
-<span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">os.path</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">compress</span>
-
 <span class="s2">"NumPy"</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">numpy.fft</span> <span class="kn">import</span> <span class="n">fft2</span><span class="p">,</span> <span class="n">fftshift</span><span class="p">,</span> <span class="n">ifft2</span>
 
 <span class="s2">"SciPy"</span>
-<span class="kn">import</span> <span class="nn">scipy</span> <span class="k">as</span> <span class="nn">sp</span>
 <span class="kn">from</span> <span class="nn">scipy.constants</span> <span class="kn">import</span> <span class="n">c</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">m_e</span><span class="p">,</span> <span class="n">epsilon_0</span><span class="p">,</span> <span class="n">mu_0</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">interpolate</span>
-<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">make_interp_spline</span><span class="p">,</span> <span class="n">BSpline</span><span class="p">,</span> <span class="n">interp1d</span>
-<span class="kn">import</span> <span class="nn">scipy.ndimage</span>
 <span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">odeint</span>
-<span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">gaussian_filter</span><span class="p">,</span> <span class="n">gaussian_filter1d</span><span class="p">,</span> <span class="n">zoom</span>
-<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">savgol_filter</span><span class="p">,</span> <span class="n">hilbert</span><span class="p">,</span> <span class="n">butter</span><span class="p">,</span> <span class="n">filtfilt</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">fftpack</span>
 
 <span class="s2">"Notebook"</span>
 <span class="kn">from</span> <span class="nn">ipywidgets</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">import</span> <span class="nn">ipywidgets</span> <span class="k">as</span> <span class="nn">wg</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">HTML</span>
+
+<span class="c1"># Code to add a toggle button for code visibility</span>
+<span class="k">def</span> <span class="nf">hide_code</span><span class="p">():</span>
+    <span class="n">display</span><span class="p">(</span><span class="n">HTML</span><span class="p">(</span><span class="s1">'''&lt;script&gt;</span>
+<span class="s1">        code_show = true; </span>
+<span class="s1">        function code_toggle() {</span>
+<span class="s1">         if (code_show){</span>
+<span class="s1">         $('div.input').hide();</span>
+<span class="s1">         } else {</span>
+<span class="s1">         $('div.input').show();</span>
+<span class="s1">         }</span>
+<span class="s1">         code_show = !code_show</span>
+<span class="s1">        } </span>
+<span class="s1">        $( document ).ready(code_toggle);</span>
+<span class="s1">    &lt;/script&gt;</span>
+<span class="s1">    &lt;form action="javascript:code_toggle()"&gt;&lt;input type="submit" value="Toggle Code"&gt;&lt;/form&gt;'''</span><span class="p">))</span>
 
 <span class="s2">"Matplotlib"</span>
 <span class="kn">import</span> <span class="nn">matplotlib</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-
-<span class="c1"># Colours</span>
-<span class="kn">import</span> <span class="nn">cmasher</span> <span class="k">as</span> <span class="nn">cmr</span>
-<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">cm</span>
-<span class="kn">import</span> <span class="nn">matplotlib.colors</span> <span class="k">as</span> <span class="nn">mcolors</span>
-<span class="kn">from</span> <span class="nn">matplotlib.colors</span> <span class="kn">import</span> <span class="n">LogNorm</span>
-<span class="kn">from</span> <span class="nn">matplotlib.ticker</span> <span class="kn">import</span> <span class="n">AutoMinorLocator</span>
-<span class="kn">import</span> <span class="nn">matplotlib.ticker</span> <span class="k">as</span> <span class="nn">ticker</span>
-<span class="kn">from</span> <span class="nn">mpl_toolkits.axes_grid1</span> <span class="kn">import</span> <span class="n">make_axes_locatable</span><span class="p">,</span> <span class="n">axes_size</span>
 
 <span class="c1"># Formatting</span>
 <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span>
@@ -7546,20 +7539,8 @@ a.anchor-link {
     <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="s1">'</span><span class="si">{:.2e}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'e'</span><span class="p">)</span>
     <span class="n">b</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
     <span class="k">return</span> <span class="sa">r</span><span class="s1">'$</span><span class="si">{}</span><span class="s1"> \times 10^{{</span><span class="si">{}</span><span class="s1">}}$'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="s2">"DEFINE CONSTANTS"</span>
+    
+<span class="s2">"DEFINE CONSTANTS"</span>
 <span class="n">cm</span> <span class="o">=</span> <span class="mf">1e-2</span>
 <span class="n">mm</span> <span class="o">=</span> <span class="mf">1e-3</span>
 <span class="n">um</span> <span class="o">=</span> <span class="mf">1e-6</span>
@@ -7568,21 +7549,8 @@ a.anchor-link {
 <span class="n">fs</span> <span class="o">=</span> <span class="mf">1e-15</span>
 <span class="n">mJ</span> <span class="o">=</span> <span class="mf">1e-3</span>
 <span class="n">c</span> <span class="o">=</span> <span class="mf">2.998e8</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Conversions to real SI units (rest of code normalised to plasma )</span>
 
+<span class="c1"># Conversions to real SI units (rest of code normalised to plasma )</span>
 <span class="k">def</span> <span class="nf">generate_parameters</span><span class="p">(</span><span class="n">n_0</span><span class="p">):</span>
     <span class="n">k_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
         <span class="mf">4.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">e</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n_0</span> <span class="o">*</span> <span class="mf">1e6</span> <span class="o">/</span> <span class="p">(</span><span class="n">m_e</span> <span class="o">*</span> <span class="n">c</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
@@ -7618,21 +7586,7 @@ a.anchor-link {
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">intensity</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">intensity</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [55]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># The 1D wake equations are given for both the linear and non-linear case</span>
-<span class="c1"># All units should be normalised to the plasma period</span>
+
 <span class="k">def</span> <span class="nf">plot_wakefield</span><span class="p">(</span>
     <span class="n">omega0</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">a01</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">tau1</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">tau_delay1</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">a02</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">tau2</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">tau_delay2</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
     
@@ -7866,20 +7820,8 @@ a.anchor-link {
     <span class="n">ax4</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s1">'both'</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">'both'</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
-<div class="jp-Cell-inputWrapper" tabindex="0">
-<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
-</div>
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [56]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-<div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">w</span> <span class="o">=</span> <span class="n">interactive</span><span class="p">(</span>
+
+<span class="n">w</span> <span class="o">=</span> <span class="n">interactive</span><span class="p">(</span>
     <span class="n">plot_wakefield</span><span class="p">,</span>
     <span class="n">omega0</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>
     <span class="n">a01</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
@@ -7895,6 +7837,8 @@ a.anchor-link {
 <span class="c1"># a01/2: normalised relativistic factor for drive/injector</span>
 <span class="c1"># tau1/2: normalised (to plasma period) pulse duration</span>
 <span class="c1"># tau_delay1/2: spacing or offset from psi=0</span>
+<span class="c1"># Call the function to activate the toggle button</span>
+<span class="n">hide_code</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -7910,18 +7854,67 @@ a.anchor-link {
 <pre>interactive(children=(IntSlider(value=15, description='omega0', max=50, min=15), FloatSlider(value=1.0, descri…</pre>
 </div>
 </div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
+<script>
+        code_show = true; 
+        function code_toggle() {
+         if (code_show){
+         $('div.input').hide();
+         } else {
+         $('div.input').show();
+         }
+         code_show = !code_show
+        } 
+        $( document ).ready(code_toggle);
+    </script>
+<form action="javascript:code_toggle()"><input type="submit" value="Toggle Code"/></form>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs">
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span> 
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Call the function to activate the toggle button</span>
+<span class="n">hide_code</span><span class="p">()</span>
 </pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>interactive(children=(IntSlider(value=15, description='omega0', max=50, min=15), FloatSlider(value=1.0, descri…</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedHTMLCommon jp-RenderedHTML jp-OutputArea-output" data-mime-type="text/html" tabindex="0">
+<script>
+        code_show = true; 
+        function code_toggle() {
+         if (code_show){
+         $('div.input').hide();
+         } else {
+         $('div.input').show();
+         }
+         code_show = !code_show
+        } 
+        $( document ).ready(code_toggle);
+    </script>
+<form action="javascript:code_toggle()"><input type="submit" value="Toggle Code"/></form>
 </div>
 </div>
 </div>
