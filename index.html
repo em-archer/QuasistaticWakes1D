@@ -301,8 +301,8 @@ def plot_wakefield(
     ax1a.plot(psi_plot, a_02(psi), color="orange", linewidth=2)
     ax1a.plot(psi_plot, a_2(psi), "--", color="orange", linewidth=2)
     ax1.plot(psi_plot, phi, "blue", linewidth=2)
-    ax1.set_xlabel(r"$\xi/\lambda_p$")
-    ax1.set_ylabel(r"$\phi(\xi_p)$")
+    <!-- ax1.set_xlabel(r"$\xi/\lambda_p$") -->
+    <!-- ax1.set_ylabel(r"$\phi(\xi_p)$") -->
     ax1.tick_params(axis='both', which='both', labelsize=16)
     ax1a.tick_params(axis='both', which='both', labelsize=16)
     ax1.set_ylim(-1.5*np.max(np.abs(phi)),1.5*np.max(np.abs(phi)))
@@ -315,8 +315,8 @@ def plot_wakefield(
     ax2a.plot(psi_plot, a_02(psi), color="orange", linewidth=2)
     ax2a.plot(psi_plot, a_2(psi), "--", color="orange", linewidth=2)
     ax2.plot(psi_plot, Ez, "red", linewidth=2)
-    ax2.set_xlabel(r"$\xi/\lambda_p$")
-    ax2.set_ylabel(r"$E_z/E_{wb}$")
+    <!-- ax2.set_xlabel(r"$\xi/\lambda_p$") -->
+    <!-- ax2.set_ylabel(r"$E_z/E_{wb}$") -->
     ax2.grid(True)
     ax2.tick_params(axis='both', which='both', labelsize=16)
     ax2a.tick_params(axis='both', which='both', labelsize=16)
@@ -334,8 +334,8 @@ def plot_wakefield(
     ax3.set_ylim(-1.5*np.max(np.abs(ne*100)),1.5*np.max(np.abs(ne*100)))
     ax3a.set_ylim(-1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]),
                   1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]))
-    ax3.set_xlabel(r"$\xi/\lambda_p$")
-    ax3.set_ylabel(r"$\delta n_e/n_0$ [%]")
+    <!-- ax3.set_xlabel(r"$\xi/\lambda_p$") -->
+    <!-- ax3.set_ylabel(r"$\delta n_e/n_0$ [%]") -->
     ax3.grid(True)
     ax3.tick_params(axis='both', which='both', labelsize=16)
     ax3a.tick_params(axis='both', which='both', labelsize=16)
@@ -356,8 +356,8 @@ def plot_wakefield(
         0,
         where=H_s - H_i > 0,
     )
-    ax4.set_xlabel(r"$\xi/\lambda_p$")
-    ax4.set_ylabel(r"$\Delta\mathcal{H}$")
+    <!-- ax4.set_xlabel(r"$\xi/\lambda_p$") -->
+    <!-- ax4.set_ylabel(r"$\Delta\mathcal{H}$") -->
     ax4.grid(True)
     ax4.tick_params(axis='both', which='both', labelsize=16)
     ax4.tick_params(axis='both', which='both', labelsize=16)
