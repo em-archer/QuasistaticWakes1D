@@ -73,31 +73,295 @@
         const pythonCode = `
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.constants import c, e, m_e, epsilon_0, mu_0
+from scipy.integrate import odeint
 from io import BytesIO
 import base64
 
+# Formatting
+parameters = {
+    "axes.labelsize": 20,
+    "axes.titlesize": 20,
+    "xtick.labelsize": "large",
+    "ytick.labelsize": "large",
+}
+plt.rcParams.update(parameters)
+matplotlib.rcParams["mathtext.fontset"] = "stix"
+matplotlib.rcParams["font.family"] = "STIXGeneral"
+plt.close("all")
+cbfs = 6
+
+"DEFINE CONSTANTS"
+cm = 1e-2
+mm = 1e-3
+um = 1e-6
+nm = 1e-9
+ps = 1e-12
+fs = 1e-15
+mJ = 1e-3
+c = 2.998e8
+
+# Conversions to real SI units (rest of code normalised to plasma )
 def generate_parameters(n_0):
-    c = 2.998e8
-    k_p = np.sqrt(4.0 * np.pi * 1.6e-19**2 * n_0 * 1e6 / (9.11e-31 * c**2))
-    omega_p = np.sqrt(4.0 * np.pi * 1.6e-19**2 * n_0 * 1e6 / 9.11e-31)
-    lambda_p = 2.0 * np.pi * c / omega_p
-    E0 = c * 9.11e-31 * omega_p / 1.6e-19
+    k_p = np.sqrt(
+        4.0 * np.pi * e**2 * n_0 * 1e6 / (m_e * c**2)
+    )  # Plasma wavenumber [m^-1]
+    omega_p = np.sqrt(4.0 * np.pi * e**2 * n_0 * 1e6 / m_e)  # Plasma frequency [s^-1]
+    lambda_p = 2.0 * np.pi * c / omega_p  # Plasma wavelength [m]
+    E0 = c * m_e * omega_p / e  # Cold non-relativistic wavebreaking field [Vm^-1]
     return k_p, omega_p, lambda_p, E0
 
-def plot_wakefield(omega0, a01, tau1):
-    n_0 = 1.0e17
-    k_p, omega_p, lambda_p, E0 = generate_parameters(n_0)
-    xi = np.linspace(-lambda_p, 4. * lambda_p, 1000)
-    psi = k_p * xi
-    phi = np.sin(psi * omega0 / 15) * np.exp(-a01 * psi / lambda_p)
 
-    plt.figure(figsize=(8, 4))
-    plt.plot(psi, phi, label="Wakefield Potential")
-    plt.xlabel("xi")
-    plt.ylabel("Potential (phi)")
-    plt.title(f"Wakefield Simulation (omega0={omega0}, a01={a01}, tau1={tau1})")
-    plt.legend()
-    plt.grid(True)
+def normalised_parameters(v, A, Phi, E, p):
+    beta = v / c
+    a0 = e * A / (m_e * c)
+    phi = e * Phi / (m_e * c**2)
+    gamma = E / (m_e * c**2)
+    u = p / (m_e * c)
+    return beta, a0, phi, gamma, u
+
+
+def SI_parameters(beta, a0, phi, gamma, u):
+    v = beta * c
+    E = a0 * m_e * c / e
+    Phi = phi * m_e * c**2 / e
+    E = gamma * m_e * c**2
+    p = u * m_e * c
+    return v, A, Phi, E, p
+
+
+def plot_wakefield(
+    omega0=15, a01=1, tau1=1, tau_delay1=0, a02=0.5, tau2=1, tau_delay2=1):
+    
+    n_0=1.0e17
+    omega_L = 2*np.pi*c/(800*nm)
+    k_p, omega_p, lambda_p, E0 = generate_parameters(n_0)
+    tau_p = 2.*np.pi / omega_p
+    
+    tau_delay1*=2.*np.pi
+    tau_delay2*=2.*np.pi
+    
+    # Calculate coordinates
+    xi = np.linspace(- lambda_p, 4. * lambda_p, 1000)  # Moving frame coordinate
+    psi = k_p * xi   # Normalised moving frame coordinate
+    psi_plot = - psi / (2. * np.pi) + k_p * tau_delay1 / (2. * np.pi) # Axis for plotting
+        
+    # Laser vector potential 
+    def a_1(psi):
+        field = (
+            a01
+            * np.exp(- 2. * np.log(2) * ((psi - tau_delay1) ** 2) / (tau1) ** 2)
+            * np.exp(- 1j * omega0 * psi)
+        )
+        return np.real(field)
+        
+    def a_2(psi):
+        field = (
+            a02
+            * np.exp(- 2. * np.log(2) * ((psi - (tau_delay1 + tau_delay2)) ** 2) / (tau2) ** 2)
+            * np.exp(- 1j * omega0 *  psi)
+        )
+        return np.real(field)
+
+    # Laser envelopes
+    def a_01(psi):
+        field = (
+            a01
+            * np.exp(- 2. * np.log(2) * ((psi - tau_delay1) ** 2) / (tau1) ** 2)
+        )
+        return field
+    
+    def a_02(psi):
+        field = (
+            a02
+            * np.exp(- 2. * np.log(2) * ((psi - (tau_delay1 + tau_delay2)) ** 2) / (tau2) ** 2)
+        )
+        return field
+
+
+    # Sinusoidal laser envelope
+    def a_s(psi):
+        env1 = a01 * np.sin(np.pi * psi / tau1)
+        if hasattr(psi, "__len__"):
+            env1[psi > tau1] = 0
+        elif psi > tau1:
+            env1 = 0
+
+        env2 = a02 * np.sin(np.pi * psi / tau2)
+        if hasattr(psi, "__len__"):
+            env2[psi > tau2] = 0
+        elif psi > tau2:
+            env2 = 0
+        return env1 + env2
+
+    def linear_wake(x, psi):
+        return [x[1], k_p**2 * (a(psi) ** 2 - x[0])]
+
+    def non_linear_wake_approx(x, psi):
+        return [x[1], k_p**2 / 2.0 * ((1 + a(psi) ** 2) / (1 + x[0]) ** 2 - 1)]
+
+    def non_linear_wake_esarey(x, psi):
+        beta_p = np.sqrt(1 - (k_p / omega0) ** 2)
+        gamma_p = 1.0 / np.sqrt(1 - beta_p**2)
+        Omega = (1.0 + x[0])
+        a = a_1(psi) + a_2(psi)
+        return [
+            x[1],
+            (k_p * gamma_p) ** 2
+            * (
+                beta_p
+                / np.sqrt(1.0 - (1.0 +  a**2) / (gamma_p**2 * Omega ** 2))
+                - 1.0
+            ),
+        ]
+
+    def non_linear_wake(x, psi):
+        beta_p = np.sqrt(1 - (k_p / omega0) ** 2)
+        gamma_p = 1.0 / np.sqrt(1 - beta_p**2)
+        Omega = (1.0 + x[0])
+        a = a_1(psi) + a_2(psi)
+        Psi = np.sqrt(1.0 - (1.0 + a**2)/(gamma_p**2 * Omega**2))
+        return [
+            x[1],
+            (k_p) ** 2
+            * (
+                beta_p * (1.0 + a** 2) - Omega**2 * Psi
+            ) / (
+                Omega**2 * Psi + beta_p * Omega**2 * Psi**2
+            ),
+        ]
+
+    def Hamiltonian(
+        u, psi, phi
+    ):  # Defines the Hamiltonian of the electron motion in non-linear wake
+        beta_p = np.sqrt(1 - (k_p / omega0) ** 2)
+        gamma_p = 1.0 / np.sqrt(1 - beta_p**2)
+        gamma_perp = (1.0 + a_01(psi) ** 2)
+        u = u / (beta_p * gamma_p)
+        return np.sqrt(gamma_perp**2 + u**2) - beta_p * u + phi
+
+    def Hamiltonian_s(psi_min, phi_min):  # Defines the separatrix
+        beta_p = np.sqrt(1 - (k_p / omega0) ** 2)  # !! Note c=1 so k_p/c=k_p
+        gamma_p = 1.0 / np.sqrt(1 - beta_p**2)
+        gamma_perp = 1 + a_01(psi_min) ** 2 / 2.0
+        return gamma_perp / gamma_p - phi_min
+
+    def trajectory_p(psi, H, phi):
+        beta_p = np.sqrt(1 - (k_p / omega0) ** 2)
+        gamma_p = 1.0 / np.sqrt(1 - beta_p**2)
+        return np.real(
+            beta_p * gamma_p**2 * (H + phi)
+            + gamma_p
+            * np.sqrt((gamma_p**2 * (H + phi) ** 2 - (1.0 + a1(psi)) ** 2) + 0 * 1j)
+        )
+
+    def trajectory_m(psi, H, phi):
+        beta_p = np.sqrt(1 - (k_p / omega0) ** 2)
+        gamma_p = 1.0 / np.sqrt(1 - beta_p**2)
+        return np.real(
+            beta_p * gamma_p**2 * (H + phi)
+            - gamma_p
+            * np.sqrt((gamma_p**2 * (H + phi) ** 2 - (1.0 + a1(psi)) ** 2) + 0 * 1j)
+        )
+
+
+    def trajectory_s(psi, H, phi):
+        beta_p = np.sqrt(1 - (k_p / omega0) ** 2)
+        gamma_p = 1.0 / np.sqrt(1 - beta_p**2)
+        return np.real(
+            beta_p * gamma_p**2 * (H + phi)
+        )
+
+    # Solve 1D non-linear ODE for the wake
+    # Change the equation to be solved in the following line (e.g. linear, non-linear approx., non-linear)
+    # Non-linear and approx given and referenced in Esarey et al. (2009)
+    # Linear from Najmudin, CAS-CERN (2016)
+    phi, phi_ = odeint(non_linear_wake, [2e-9, 0], psi).T
+    _, phi__ = non_linear_wake([phi, phi_], psi)
+
+    # Calculate wakefield, density and Hamiltonian
+    Ez = -1.0 / k_p * phi_  # Wakefield
+    ne = 1.0 / k_p**2 * phi__ # Electron density, delta n_e/n_0
+    
+    phi_min = np.min(phi)  # Minimum wake potential
+    psi_min = np.argsort(phi)[1]  # Index of minimum trapping phase
+    H_i = 1 - phi # Intital Hamiltonian for particle at any position
+    H_s = Hamiltonian_s(psi_min, phi_min)  # Separatrix
+
+    colormap = plt.cm.gist_ncar
+    colormap_ = [colormap(i) for i in np.linspace(0, 0.9, 10 + 1)]
+    # Plot potential, field and electron density
+
+    fig, ((ax1 , ax2), (ax3 , ax4)) = plt.subplots(
+        nrows=2, ncols=2, figsize=(10, 8)
+    )
+    ax1a = ax1.twinx()
+    ax1a.plot(psi_plot, a_01(psi), color="orange", linewidth=2)
+    ax1a.plot(psi_plot, a_1(psi), "--", color="orange", linewidth=2)
+    ax1a.plot(psi_plot, a_02(psi), color="orange", linewidth=2)
+    ax1a.plot(psi_plot, a_2(psi), "--", color="orange", linewidth=2)
+    ax1.plot(psi_plot, phi, "blue", linewidth=2)
+    ax1.set_xlabel(r"$\xi/\lambda_p$")
+    ax1.set_ylabel(r"$\phi(\xi_p)$")
+    ax1.tick_params(axis='both', which='both', labelsize=16)
+    ax1a.tick_params(axis='both', which='both', labelsize=16)
+    ax1.set_ylim(-1.5*np.max(np.abs(phi)),1.5*np.max(np.abs(phi)))
+    ax1a.set_ylim(-1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]),
+                  1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]))
+    ax1.grid(True)
+    ax2a = ax2.twinx()
+    ax2a.plot(psi_plot, a_01(psi), color="orange", linewidth=2)
+    ax2a.plot(psi_plot, a_1(psi), "--", color="orange", linewidth=2)
+    ax2a.plot(psi_plot, a_02(psi), color="orange", linewidth=2)
+    ax2a.plot(psi_plot, a_2(psi), "--", color="orange", linewidth=2)
+    ax2.plot(psi_plot, Ez, "red", linewidth=2)
+    ax2.set_xlabel(r"$\xi/\lambda_p$")
+    ax2.set_ylabel(r"$E_z/E_{wb}$")
+    ax2.grid(True)
+    ax2.tick_params(axis='both', which='both', labelsize=16)
+    ax2a.tick_params(axis='both', which='both', labelsize=16)
+    ax2.set_ylim(-1.5*np.max(np.abs(Ez)),1.5*np.max(np.abs(Ez)))
+    ax2a.set_ylim(-1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]),
+                  1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]))
+    ax3a = ax3.twinx()
+    ax3a.plot(psi_plot, a_01(psi), color="orange", linewidth=2)
+    ax3a.plot(psi_plot, a_1(psi), "--", color="orange", linewidth=2)
+    ax3a.plot(psi_plot, a_02(psi), color=colormap_[10], linewidth=2)
+    ax3a.plot(psi_plot, a_2(psi), "--", color=colormap_[10], linewidth=2)
+    ax3a.plot(psi_plot, a_02(psi), color="orange", linewidth=2)
+    ax3a.plot(psi_plot, a_2(psi), "--", color="orange", linewidth=2)
+    ax3.plot(psi_plot, ne*100, "green", linewidth=2)
+    ax3.set_ylim(-1.5*np.max(np.abs(ne*100)),1.5*np.max(np.abs(ne*100)))
+    ax3a.set_ylim(-1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]),
+                  1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]))
+    ax3.set_xlabel(r"$\xi/\lambda_p$")
+    ax3.set_ylabel(r"$\delta n_e/n_0$ [%]")
+    ax3.grid(True)
+    ax3.tick_params(axis='both', which='both', labelsize=16)
+    ax3a.tick_params(axis='both', which='both', labelsize=16)
+    ax4a = ax4.twinx()
+    ax4a.plot(psi_plot, a_01(psi), color="orange", linewidth=2)
+    ax4a.plot(psi_plot, a_1(psi), "--", color="orange", linewidth=2)
+    ax4a.plot(psi_plot, a_02(psi), color=colormap_[10], linewidth=2)
+    ax4a.plot(psi_plot, a_2(psi), "--", color=colormap_[10], linewidth=2)
+    ax4a.plot(psi_plot, a_02(psi), color="orange", linewidth=2)
+    ax4a.plot(psi_plot, a_2(psi), "--", color="orange", linewidth=2)
+    ax4.plot(psi_plot, H_s - H_i, "black", linewidth=2, label="$\Delta\mathcal{H}$")
+    ax4.set_ylim(-1.5*np.max(np.abs(H_s - H_i)),1.5*np.max(np.abs(H_s - H_i)))
+    ax4a.set_ylim(-1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]),
+                  1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]))
+    ax4.fill_between(
+        psi_plot,
+        H_s - H_i,
+        0,
+        where=H_s - H_i > 0,
+    )
+    ax4.set_xlabel(r"$\xi/\lambda_p$")
+    ax4.set_ylabel(r"$\Delta\mathcal{H}$")
+    ax4.grid(True)
+    ax4.tick_params(axis='both', which='both', labelsize=16)
+    ax4.tick_params(axis='both', which='both', labelsize=16)
+    plt.tight_layout()
     buf = BytesIO()
     plt.savefig(buf, format="png")
     buf.seek(0)
