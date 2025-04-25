@@ -73,24 +73,8 @@
         const pythonCode = `
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.constants import c, e, m_e, epsilon_0, mu_0
-from scipy.integrate import odeint
 from io import BytesIO
 import base64
-
-# Formatting
-parameters = {
-    "axes.labelsize": 20,
-    "axes.titlesize": 20,
-    "xtick.labelsize": "large",
-    "ytick.labelsize": "large",
-}
-plt.rcParams.update(parameters)
-matplotlib.rcParams["mathtext.fontset"] = "stix"
-matplotlib.rcParams["font.family"] = "STIXGeneral"
-plt.close("all")
-cbfs = 6
-
 "DEFINE CONSTANTS"
 cm = 1e-2
 mm = 1e-3
@@ -130,7 +114,15 @@ def SI_parameters(beta, a0, phi, gamma, u):
     return v, A, Phi, E, p
 
 
-def plot_wakefield(
+def energy(intensity,axes,NormalisationFactor=False): # Calculates the total energy of the field from the intensity map
+    for axis in axes:
+        intensity*=axis
+    if NormalisationFactor: # Calculates instead the factor to multiply field by to normalise total energy
+        return np.sqrt(np.sum(intensity))
+    else:
+        return np.sum(intensity)
+
+def plot_wakefield2(
     omega0=15, a01=1, tau1=1, tau_delay1=0, a02=0.5, tau2=1, tau_delay2=1):
     
     n_0=1.0e17
@@ -288,80 +280,20 @@ def plot_wakefield(
     H_i = 1 - phi # Intital Hamiltonian for particle at any position
     H_s = Hamiltonian_s(psi_min, phi_min)  # Separatrix
 
-    colormap = plt.cm.gist_ncar
-    colormap_ = [colormap(i) for i in np.linspace(0, 0.9, 10 + 1)]
-    # Plot potential, field and electron density
+def plot_wakefield(omega0, a01, tau1):
+    n_0 = 1.0e17
+    k_p, omega_p, lambda_p, E0 = generate_parameters(n_0)
+    xi = np.linspace(-lambda_p, 4. * lambda_p, 1000)
+    psi = k_p * xi
+    phi = np.sin(psi * omega0 / 15) * np.exp(-a01 * psi / lambda_p)
 
-    fig, ((ax1 , ax2), (ax3 , ax4)) = plt.subplots(
-        nrows=2, ncols=2, figsize=(10, 8)
-    )
-    ax1a = ax1.twinx()
-    ax1a.plot(psi_plot, a_01(psi), color="orange", linewidth=2)
-    ax1a.plot(psi_plot, a_1(psi), "--", color="orange", linewidth=2)
-    ax1a.plot(psi_plot, a_02(psi), color="orange", linewidth=2)
-    ax1a.plot(psi_plot, a_2(psi), "--", color="orange", linewidth=2)
-    ax1.plot(psi_plot, phi, "blue", linewidth=2)
-    <!-- ax1.set_xlabel(r"$\xi/\lambda_p$") -->
-    <!-- ax1.set_ylabel(r"$\phi(\xi_p)$") -->
-    ax1.tick_params(axis='both', which='both', labelsize=16)
-    ax1a.tick_params(axis='both', which='both', labelsize=16)
-    ax1.set_ylim(-1.5*np.max(np.abs(phi)),1.5*np.max(np.abs(phi)))
-    ax1a.set_ylim(-1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]),
-                  1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]))
-    ax1.grid(True)
-    ax2a = ax2.twinx()
-    ax2a.plot(psi_plot, a_01(psi), color="orange", linewidth=2)
-    ax2a.plot(psi_plot, a_1(psi), "--", color="orange", linewidth=2)
-    ax2a.plot(psi_plot, a_02(psi), color="orange", linewidth=2)
-    ax2a.plot(psi_plot, a_2(psi), "--", color="orange", linewidth=2)
-    ax2.plot(psi_plot, Ez, "red", linewidth=2)
-    <!-- ax2.set_xlabel(r"$\xi/\lambda_p$") -->
-    <!-- ax2.set_ylabel(r"$E_z/E_{wb}$") -->
-    ax2.grid(True)
-    ax2.tick_params(axis='both', which='both', labelsize=16)
-    ax2a.tick_params(axis='both', which='both', labelsize=16)
-    ax2.set_ylim(-1.5*np.max(np.abs(Ez)),1.5*np.max(np.abs(Ez)))
-    ax2a.set_ylim(-1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]),
-                  1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]))
-    ax3a = ax3.twinx()
-    ax3a.plot(psi_plot, a_01(psi), color="orange", linewidth=2)
-    ax3a.plot(psi_plot, a_1(psi), "--", color="orange", linewidth=2)
-    ax3a.plot(psi_plot, a_02(psi), color=colormap_[10], linewidth=2)
-    ax3a.plot(psi_plot, a_2(psi), "--", color=colormap_[10], linewidth=2)
-    ax3a.plot(psi_plot, a_02(psi), color="orange", linewidth=2)
-    ax3a.plot(psi_plot, a_2(psi), "--", color="orange", linewidth=2)
-    ax3.plot(psi_plot, ne*100, "green", linewidth=2)
-    ax3.set_ylim(-1.5*np.max(np.abs(ne*100)),1.5*np.max(np.abs(ne*100)))
-    ax3a.set_ylim(-1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]),
-                  1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]))
-    <!-- ax3.set_xlabel(r"$\xi/\lambda_p$") -->
-    <!-- ax3.set_ylabel(r"$\delta n_e/n_0$ [%]") -->
-    ax3.grid(True)
-    ax3.tick_params(axis='both', which='both', labelsize=16)
-    ax3a.tick_params(axis='both', which='both', labelsize=16)
-    ax4a = ax4.twinx()
-    ax4a.plot(psi_plot, a_01(psi), color="orange", linewidth=2)
-    ax4a.plot(psi_plot, a_1(psi), "--", color="orange", linewidth=2)
-    ax4a.plot(psi_plot, a_02(psi), color=colormap_[10], linewidth=2)
-    ax4a.plot(psi_plot, a_2(psi), "--", color=colormap_[10], linewidth=2)
-    ax4a.plot(psi_plot, a_02(psi), color="orange", linewidth=2)
-    ax4a.plot(psi_plot, a_2(psi), "--", color="orange", linewidth=2)
-    ax4.plot(psi_plot, H_s - H_i, "black", linewidth=2, label="$\Delta\mathcal{H}$")
-    ax4.set_ylim(-1.5*np.max(np.abs(H_s - H_i)),1.5*np.max(np.abs(H_s - H_i)))
-    ax4a.set_ylim(-1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]),
-                  1.5*np.max([np.abs(a_01(psi)),np.abs(a_02(psi))]))
-    ax4.fill_between(
-        psi_plot,
-        H_s - H_i,
-        0,
-        where=H_s - H_i > 0,
-    )
-    <!-- ax4.set_xlabel(r"$\xi/\lambda_p$") -->
-    <!-- ax4.set_ylabel(r"$\Delta\mathcal{H}$") -->
-    ax4.grid(True)
-    ax4.tick_params(axis='both', which='both', labelsize=16)
-    ax4.tick_params(axis='both', which='both', labelsize=16)
-    plt.tight_layout()
+    plt.figure(figsize=(8, 4))
+    plt.plot(psi, phi, label="Wakefield Potential")
+    plt.xlabel("xi")
+    plt.ylabel("Potential (phi)")
+    plt.title(f"Wakefield Simulation (omega0={omega0}, a01={a01}, tau1={tau1})")
+    plt.legend()
+    plt.grid(True)
     buf = BytesIO()
     plt.savefig(buf, format="png")
     buf.seek(0)
